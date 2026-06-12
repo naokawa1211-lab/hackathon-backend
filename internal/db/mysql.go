@@ -35,9 +35,9 @@ func ConnectDB() {
 	DB.SetConnMaxLifetime(5 * time.Minute) // 接続の寿命
 
 	// Pingで実際に通信を行う
-	if err := DB.Ping(); err != nil {
-		log.Fatalf("MySQLへの通信（Ping）が届きません。Dockerが起動しているか確認してください: %v", err)
-	}
+	//if err := DB.Ping(); err != nil {
+	//	log.Fatalf("MySQLへの通信（Ping）が届きません。Dockerが起動しているか確認してください: %v", err)
+	//}
 
-	log.Println("MySQL データベースへの接続に成功しました")
+	//log.Println("MySQL データベースへの接続に成功しました")
 }
