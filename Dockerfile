@@ -1,5 +1,5 @@
 # ステージ1: Goのコードをビルドして実行ファイルを作る環境
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /app
 
 # 依存関係（go.mod / go.sum）をコピーしてダウンロード
