@@ -3,14 +3,14 @@ version: '3.8'
 services:
   mysql-db:
     image: mysql:8.0
-    container_name: milkyway-db
+    container_name: hackathon-container
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root_space_password
-      MYSQL_DATABASE: milkyway_flea_market
-      MYSQL_USER: space_operator
-      MYSQL_PASSWORD: space_password123
+      MYSQL_ROOT_PASSWORD: hackathon-password
+      MYSQL_DATABASE: UTTC-hackathon
+      MYSQL_USER: naoya-kawata
+      MYSQL_PASSWORD: hackathon-password
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql

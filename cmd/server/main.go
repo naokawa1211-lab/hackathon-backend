@@ -11,28 +11,28 @@ import (
 )
 
 func main() {
-	// 1. 設定（環境変数）の読み込み
+	// 環境変数の読み込み
 	config.LoadConfig()
 
-	// 2. データベース接続
+	// データベース接続
 	db.ConnectDB()
-	defer db.DB.Close() // サーバー終了時に安全にDBを閉じる
+	defer db.DB.Close() // main関数終了時にデータベースを閉じる defer文
 
-	// 3. Gin（Webフレームワーク）の起動
+	// Webサーバーのルーターを用意
 	r := gin.Default()
 
 	// 疎通確認用のテストAPI (http://localhost:8080/ping)
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "success",
-			"message": "🪐 バックエンド宇宙ステーションからの応答を受信！",
-		})
+			"message": "バックエンドが応答",
+		})//gin.HはJSONを作成、func(c *gin.Context){}は無名関数
 	})
 
-	// 4. サーバーを指定ポートで起動
+	// サーバーを指定ポートで起動
 	port := config.Env.ServerPort
-	log.Printf("🚀 バックエンドサーバーがポート %s で離陸しました！", port)
+	log.Println("サーバー起動:", port)
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
-		log.Fatalf("❌ サーバーの起動に失敗しました: %v", err)
+		log.Fatalf("サーバーの起動に失敗: %v", err)
 	}
 }

@@ -16,7 +16,7 @@ type Config struct {
 	ServerPort string
 }
 
-var Env *Config
+var Env *Config //Envをポインタとして定義
 
 // LoadConfig は.envから環境変数を読み込みます
 func LoadConfig() {
@@ -26,18 +26,17 @@ func LoadConfig() {
 	}
 
 	Env = &Config{
-		DBUser:     getEnv("DB_USER", "space_operator"),
-		DBPassword: getEnv("DB_PASSWORD", "space_password123"),
-		DBHost:     getEnv("DB_HOST", "127.0.0.1"),
-		DBPort:     getEnv("DB_PORT", "3306"),
-		DBName:     getEnv("DB_NAME", "milkyway_flea_market"),
+		DBUser:     getEnv("DB_USER", "fallback_user"),
+		DBPassword: getEnv("DB_PASSWORD", "fallback_password"),
+		DBHost:     getEnv("DB_HOST", "fallback_host"),
+		DBName:     getEnv("DB_NAME", "fallback_name"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 	}
 }
 
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
-		return value
+		return value // .envにあれば返す
 	}
-	return fallback
+	return fallback //なければデフォルト値を返す
 }
