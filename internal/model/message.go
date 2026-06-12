@@ -8,6 +8,5 @@ type Message struct {
     SenderID          string    `json:"sender_id"`
     ReceiverID        string    `json:"receiver_id"`
     Content           string    `json:"content"`
-    TranslatedContent string    `json:"translated_content"`
     CreatedAt         time.Time `json:"created_at"`
 }
