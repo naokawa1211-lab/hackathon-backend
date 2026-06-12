@@ -16,7 +16,7 @@ var DB *sql.DB
 // ConnectDB はMySQLデータベースへの接続を確立
 func ConnectDB() {
 	// DSN (Data Source Name) を環境変数から組み立て
-	dsn := fmt.Sprintf("%s:%s@%s/%s?parseTime=true",
+	dsn := fmt.Sprintf("%s:%s@%s/%s?parseTime=true&allowCleartextPasswords=true",
 		config.Env.DBUser, 
 		config.Env.DBPassword, 
 		config.Env.DBHost, 
