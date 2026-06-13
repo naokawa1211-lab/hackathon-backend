@@ -21,7 +21,7 @@ func main() {
 
 	// Webサーバーのルーターを用意
 	r := gin.Default()
-	
+
 	r.Use(func(c *gin.Context) {
     c.Writer.Header().Set("Access-Control-Allow-Origin", "*") // すべてのオリジンからのアクセスを許可
     c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -37,6 +37,7 @@ func main() {
 })
 	r.POST("/api/messages", handler.SendMessageHandler)      // メッセージ送信
 	r.GET("/api/messages/history", handler.GetChatHistoryHandler) // チャット履歴取得
+	r.POST("/api/products", handler.CreateProductHandler)//商品情報登録
 
 	// 疎通確認用のテストAPI (http://localhost:8080/ping)
 	r.GET("/ping", func(c *gin.Context) {
