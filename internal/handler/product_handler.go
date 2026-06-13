@@ -48,3 +48,20 @@ func CreateProductHandler(c *gin.Context) {
 	// 成功したら 200 OK と登録されたデータを返す
 	c.JSON(http.StatusOK, product)
 }
+
+func GetProductsHandler(c *gin.Context) {
+	// 1. 型は自分で定義したものではなく、model.Product を使う
+	var products []model.Product
+
+	// 2. 直接 SQL を書くのではなく、repository 層に取得を丸投げする
+	// ※ まだ repository.GetAllProducts がない場合は、すぐ下で作り方を説明します！
+	var err error
+	products, err = repository.GetAllProducts()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "商品一覧の取得に失敗しました"})
+		return
+	}
+
+	// 3. 成功したらJSONで返す
+	c.JSON(http.StatusOK, products)
+}
