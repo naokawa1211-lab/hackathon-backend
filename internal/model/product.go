@@ -15,3 +15,12 @@ type Product struct {
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
 }
+
+type Transaction struct {
+    ID        int       `json:"id"`
+    ProductID int       `json:"product_id"`
+    BuyerID   string    `json:"buyer_id"`
+    SellerID  string    `json:"seller_id"`
+    Status    string    `json:"status"`
+    CreatedAt string    `json:"created_at"`
+}

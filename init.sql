@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS products (
     -- 🕒 【追加】更新日時（商品が 'sold' になった時間を追うためにあると便利）
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
     
-    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3. メッセージテーブル (messagedatabase)
@@ -39,8 +38,6 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT NOT NULL, -- 宇宙人語など
     translated_content TEXT, -- Gemini APIで翻訳したテキストを入れる用
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. 取引テーブル (transactiondatabase)
@@ -52,8 +49,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-    FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

@@ -30,6 +30,7 @@ func SetupRouter() *gin.Engine {
 	// 商品系エンドポイント（GETを追加！）
 	r.POST("/api/products", handler.CreateProductHandler)
 	r.GET("/api/products", handler.GetProductsHandler)
+	r.POST("/api/products/:id/buy", handler.BuyProductHandler)//商品購入
 
 	// 疎通確認用
 	r.GET("/ping", func(c *gin.Context) {
