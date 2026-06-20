@@ -1,46 +1,62 @@
 package handler
 
 import (
+	"log"
 	"net/http"
-	"strconv" // 💡 追加：文字列のIDを数値に変えるため
+	"strconv" 
 	"hackathon-backend/internal/model"
 	"hackathon-backend/internal/repository"
+	"hackathon-backend/internal/storage"
 
 	"github.com/gin-gonic/gin"
 )
 
-// CreateProductRequest はフロントから届くJSONのバリデーション定義です
-type CreateProductRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Description string `json:"description"`
-	Price       int    `json:"price" binding:"required"`
-	Category    string `json:"category" binding:"required"`
-	ImageURL1   string `json:"image_url_1"`
-	SellerID    string `json:"seller_id"` // ハッカソン中は一旦モックIDでもOK
-}
+// 画像未指定時のフォールバック画像
+const defaultProductImageURL = "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=600"
 
+// CreateProductHandler は multipart/form-data で商品情報と画像を受け取り、
+// 画像をR2にアップロードした上で商品をDBに登録します
 func CreateProductHandler(c *gin.Context) {
-	var req CreateProductRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	title := c.PostForm("title")
+	category := c.PostForm("category")
+	priceStr := c.PostForm("price")
+
+	if title == "" || category == "" || priceStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title, price, category は必須です"})
 		return
 	}
 
-	// 初期画像は銀河
-	if req.ImageURL1 == "" {
-		req.ImageURL1 = "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=600"
+	price, err := strconv.Atoi(priceStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "price は数値で指定してください"})
+		return
+	}
+
+	description := c.PostForm("description")
+	sellerID := c.PostForm("seller_id") // ハッカソン中は一旦モックIDでもOK
+
+	imageURL := defaultProductImageURL
+	if fileHeader, ferr := c.FormFile("image"); ferr == nil && fileHeader != nil {
+		uploadedURL, uploadErr := storage.UploadImage(fileHeader)
+		if uploadErr != nil {
+			log.Printf("[CreateProductHandler] R2 upload failed: filename=%q err=%v", fileHeader.Filename, uploadErr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "画像のアップロードに失敗しました"})
+			return
+		}
+		imageURL = uploadedURL
 	}
 
 	product := model.Product{
-		Title:       req.Title,
-		Description: req.Description,
-		Price:       req.Price,
-		Category:    req.Category,
-		ImageURL1:   req.ImageURL1,
-		SellerID:    req.SellerID,
+		Title:       title,
+		Description: description,
+		Price:       price,
+		Category:    category,
+		ImageURL1:   imageURL,
+		SellerID:    sellerID,
 	}
 
 	if err := repository.SaveProduct(&product); err != nil {
+		log.Printf("[CreateProductHandler] SaveProduct failed: title=%q err=%v", product.Title, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "商品情報の登録に失敗しました"})
 		return
 	}
@@ -65,7 +81,7 @@ func GetProductsHandler(c *gin.Context) {
 // 💡 Ginの仕様に合わせて新規追加！
 func BuyProductHandler(c *gin.Context) {
 	// 1. フロントから送られてきたヘッダー（買い手のUID）をキャッチ
-	buyerID := c.GetHeader("X-User-UID")
+	buyerID := c.GetHeader("X-User-id")
 	if buyerID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: 宇宙市民UIDが未検出です"})
 		return

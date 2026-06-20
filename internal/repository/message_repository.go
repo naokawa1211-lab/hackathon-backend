@@ -6,7 +6,7 @@ import (
 	"hackathon-backend/internal/model"
 )
 
-// 新しいメッセージをデータベースに保存します
+// 新しいメッセージをデータベースに保存
 func SaveMessage(msg *model.Message) error {
 	query := `
 		INSERT INTO messages (sender_id, receiver_id, content)
@@ -53,4 +53,32 @@ func GetChatHistory(userA, userB string) ([]model.Message, error) {
 		history = append(history, msg)
 	}
 	return history, nil
+}
+
+// 特定のユーザーが過去にやり取りした相手のUID一覧を重複なしで取得
+func GetChatPartners(userID string) ([]string, error) {
+	query := `
+		SELECT DISTINCT 
+			CASE 
+				WHEN sender_id = ? THEN receiver_id 
+				ELSE sender_id 
+			END as partner_id
+		FROM messages
+		WHERE sender_id = ? OR receiver_id = ?
+	`
+	rows, err := db.DB.Query(query, userID, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var partners []string
+	for rows.Next() {
+		var partnerID string
+		if err := rows.Scan(&partnerID); err != nil {
+			return nil, err
+		}
+		partners = append(partners, partnerID)
+	}
+	return partners, nil
 }

@@ -76,9 +76,10 @@ func BuyProduct(productID int, buyerID string) error {
 	defer tx.Rollback() // エラー時は自動巻き戻し
 
 	// 💡 A. その商品の現在の「売り手」と「ステータス」をチェック
+	var productTitle string
 	var sellerID string
 	var currentStatus string
-	err = tx.QueryRow("SELECT seller_id, status FROM products WHERE id = ?", productID).Scan(&sellerID, &currentStatus)
+	err = tx.QueryRow("SELECT title, seller_id, status FROM products WHERE id = ?", productID).Scan(&productTitle, &sellerID, &currentStatus)
 	if err != nil {
 		return err
 	}
@@ -106,6 +107,15 @@ func BuyProduct(productID int, buyerID string) error {
 		return err
 	}
 
+	autoContent := "商品【" + productTitle + "】の取引が完了しました。これよりトークルームを解放します。"
+	
+	_, err = tx.Exec(
+		"INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)",
+		buyerID, sellerID, autoContent,
+	)
+	if err != nil {
+		return err // メッセージの保存に失敗した場合も、購入ごとロールバックして安全を担保
+	}
 	// ⚡ すべて成功したらコミット（確定）
 	return tx.Commit()
 }

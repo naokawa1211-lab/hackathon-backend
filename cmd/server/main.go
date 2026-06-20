@@ -7,6 +7,7 @@ import (
 	"hackathon-backend/internal/config"
 	"hackathon-backend/internal/db"
 	"hackathon-backend/internal/router"
+	"hackathon-backend/internal/storage"
 )
 
 func main() {
@@ -16,6 +17,11 @@ func main() {
 	// データベース接続
 	db.ConnectDB()
 	defer db.DB.Close() // main関数終了時にデータベースを閉じる defer文
+
+	// Cloudflare R2 (画像アップロード用) クライアントの初期化
+	if err := storage.InitR2(); err != nil {
+		log.Fatalf("R2クライアントの初期化に失敗: %v", err)
+	}
 
 	// Webサーバーのルーター
 	r := router.SetupRouter()

@@ -58,3 +58,25 @@ func GetChatHistoryHandler(c *gin.Context) {
     // 履歴をそのまま JSON で返す
     c.JSON(http.StatusOK, messages)
 }
+
+func GetChatPartnersHandler(c *gin.Context) {
+	// クエリパラメータかヘッダーから自分のUIDを取得
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-UID") // どちらでも取れるようにガード
+	}
+
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id は必須です"})
+		return
+	}
+
+	partners, err := repository.GetChatPartners(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "チャット相手の取得に失敗しました"})
+		return
+	}
+
+	// 相手のUIDリストをそのまま返す (例: ["mock_uid_naoya", "user_B"])
+	c.JSON(http.StatusOK, partners)
+}

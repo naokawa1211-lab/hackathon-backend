@@ -14,6 +14,15 @@ type Config struct {
 	DBPort     string
 	DBName     string
 	ServerPort string
+
+	// Cloudflare R2 (S3互換オブジェクトストレージ) 設定
+	R2BucketName      string
+	R2AccountID       string
+	R2AccessKeyID     string
+	R2SecretAccessKey string
+	R2PublicURL       string
+
+	GeminiAPIKey string
 }
 
 var Env *Config //Envをポインタとして定義
@@ -31,6 +40,14 @@ func LoadConfig() {
 		DBHost:     getEnv("DB_HOST", "fallback_host"),
 		DBName:     getEnv("DB_NAME", "fallback_name"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
+
+		R2BucketName:      getEnv("R2_BUCKET_NAME", ""),
+		R2AccountID:       getEnv("R2_ACCOUNT_ID", ""),
+		R2AccessKeyID:     getEnv("R2_ACCESS_KEY_ID", ""),
+		R2SecretAccessKey: getEnv("R2_SECRET_ACCESS_KEY", ""),
+		R2PublicURL:       getEnv("R2_PUBLIC_URL", ""),
+
+		GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
 	}
 }
 
