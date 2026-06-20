@@ -77,6 +77,23 @@ func GetProductsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
+// GetPurchasedProductsHandler は指定したユーザーが購入した商品の一覧を返します
+func GetPurchasedProductsHandler(c *gin.Context) {
+	buyerID := c.Query("buyer_id")
+	if buyerID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "buyer_id は必須です"})
+		return
+	}
+
+	purchased, err := repository.GetPurchasedProducts(buyerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "購入履歴の取得に失敗しました"})
+		return
+	}
+
+	c.JSON(http.StatusOK, purchased)
+}
+
 // BuyProductHandler は商品の購入処理を呼び出します
 // 💡 Ginの仕様に合わせて新規追加！
 func BuyProductHandler(c *gin.Context) {
@@ -97,17 +114,21 @@ func BuyProductHandler(c *gin.Context) {
 
 	// 3. repository層のトランザクション関数を実行
 	if err := repository.BuyProduct(productID, buyerID); err != nil {
-		// リポジトリ側のガードに引っかかった場合のエラーハンドリング
 		if err.Error() == "this product is already sold" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "この物資はすでに他のセクターの商人が購入済みです"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "この商品は既に売り切れです"})
 			return
 		}
 		if err.Error() == "cannot buy your own product" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "自作自演の取引は銀河法により禁止されています"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "自分の出品した商品は購入できません"})
 			return
 		}
-		
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "取引の同期中にエラーが発生しました"})
+		// 🚀 【追加】残高不足エラーをキャッチしてフロントに400で伝える！
+		if err.Error() == "insufficient credits" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "クレジットが不足しています"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "購入処理に失敗しました"})
 		return
 	}
 

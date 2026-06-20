@@ -39,7 +39,13 @@ func SetupRouter() *gin.Engine {
     r.POST("/api/products", handler.CreateProductHandler)
     r.GET("/api/products", handler.GetProductsHandler)
     r.POST("/api/products/:id/buy", handler.BuyProductHandler)
+    r.GET("/api/products/purchased", handler.GetPurchasedProductsHandler)
+    r.POST("/api/favorites/toggle", handler.ToggleFavoriteHandler)
+    r.GET("/api/favorites", handler.GetFavoritesHandler)
+    r.POST("/api/reviews", handler.CreateReviewHandler)
+    r.GET("/api/reviews", handler.GetReviewsHandler)
     r.POST("/api/ai/space-description", handler.GenerateSpaceDescriptionHandler)
+    r.POST("/api/products/analyze-image", handler.AnalyzeImageHandler)
     r.GET("/api/messages/partners", handler.GetChatPartnersHandler)
 
     r.POST("/api/users", handler.UpsertUserHandler)     // POST: 同期用

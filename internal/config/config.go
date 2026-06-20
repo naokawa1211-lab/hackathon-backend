@@ -38,8 +38,10 @@ func LoadConfig() {
 		DBUser:     getEnv("DB_USER", "fallback_user"),
 		DBPassword: getEnv("DB_PASSWORD", "fallback_password"),
 		DBHost:     getEnv("DB_HOST", "fallback_host"),
-		DBName:     getEnv("DB_NAME", "fallback_name"),
-		ServerPort: getEnv("SERVER_PORT", "8080"),
+		DBName: getEnv("DB_NAME", "fallback_name"),
+		// 💡 Cloud Runはコンテナに PORT 環境変数を注入し、その番号でリッスンすることを要求する。
+		// ローカル開発用の SERVER_PORT は後方互換のため残し、PORT が無ければそちらにフォールバックする。
+		ServerPort: getEnv("PORT", getEnv("SERVER_PORT", "8080")),
 
 		R2BucketName:      getEnv("R2_BUCKET_NAME", ""),
 		R2AccountID:       getEnv("R2_ACCOUNT_ID", ""),

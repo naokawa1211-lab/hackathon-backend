@@ -2,16 +2,19 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"hackathon-backend/internal/model"
 	"hackathon-backend/internal/repository"
+	"github.com/gin-gonic/gin"
 )
 
-func NewUserHandler(repo *repository.UserRepository) *UserHandler {
-	return &UserHandler{repo: repo}
-}
+// 💡 パッケージレベルでリポジトリを保持（router.goの直接呼び出しスタイルに完全適合）
+var userRepo *repository.UserRepository
 
+// SetUserRepository は main.go などからDB接続後にリポジトリを注入するための関数です
+func SetUserRepository(repo *repository.UserRepository) {
+	userRepo = repo
+}
 // UpsertUserHandler: フロントから送られてきたユーザー情報をMySQLに保存
 func UpsertUserHandler(c *gin.Context) {
 	var user model.User
@@ -26,39 +29,35 @@ func UpsertUserHandler(c *gin.Context) {
 		return
 	}
 
-	// 💡 TODO: repository層の呼び出し (例: err := userRepo.UpsertUser(&user))
-	// 現状、エラーがなければ成功として返す
+	if err := userRepo.UpsertUser(&user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ユーザー情報のMySQL同期に失敗しました"})
+		return
+	}
 	
 	c.JSON(http.StatusOK, gin.H{"message": "User synced successfully"})
 }
 
 // GetUserHandler: URLパラメータからIDを取得してユーザー情報を返す
 func GetUserHandler(c *gin.Context) {
-	// 💡 Ginでは c.Param("id") で "/api/users/:id" のコロンの部分を直接引っこ抜けます！
 	id := c.Param("id")
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing user ID"})
 		return
 	}
 
-	// 💡 TODO: repository層からデータを取得 (例: user, err := userRepo.GetUserByID(id))
-	// ここではDBから取ってきたと仮定したダミーの返却例を書いておきます
-	
-	// 見つからなかった場合のモック例（バックエンドが未完成の間の生存戦略）
-	if id == "mock_uid_naoya" {
-		c.JSON(http.StatusOK, gin.H{
-			"id": "mock_uid_naoya",
-			"username": "Naoya",
-		})
+	user, err := userRepo.GetUserByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースからのユーザー取得に失敗しました"})
 		return
 	}
 
-	// 本来はDBから取得したデータを返す
-	// c.JSON(http.StatusOK, user)
-	
-	// まだDBにいない本物ユーザーへの一時的なダミー返却
-	c.JSON(http.StatusOK, gin.H{
-		"id": id,
-		"username": "宇宙の迷い人",
-	})
+	// DBに本物のユーザーが存在した場合は、そのデータを完璧に返却！
+	if user != nil {
+		c.JSON(http.StatusOK, user)
+		return
+	}
+
+	// 🛸 万が一DBに見つからなかった場合のみ、404エラーを返す
+	// これにより、フロント（DM画面）側で自動的に「未知の生命体」などのフォールバック表示に流れます
+	c.JSON(http.StatusNotFound, gin.H{"error": "User not found in database"})
 }
