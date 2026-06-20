@@ -42,6 +42,8 @@ func SetupRouter() *gin.Engine {
     r.POST("/api/ai/space-description", handler.GenerateSpaceDescriptionHandler)
     r.GET("/api/messages/partners", handler.GetChatPartnersHandler)
 
+    r.POST("/api/users", handler.UpsertUserHandler)     // POST: 同期用
+	r.GET("/api/users/:id", handler.GetUserHandler)
     r.GET("/ping", func(c *gin.Context) {
         c.JSON(200, gin.H{"status": "success", "message": "バックエンドが応答"})
     })
