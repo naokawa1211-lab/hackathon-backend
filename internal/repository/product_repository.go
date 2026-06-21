@@ -59,19 +59,24 @@ func GetAllProducts() ([]model.Product, error) {
 	for rows.Next() {
 		var p model.Product
 		// 💡 description / category / seller_id はDBスキーマ上NULLを許容するカラム（NOT NULL制約なし）。
-		// 直接 string へScanすると、本番データにNULLが1件でも混ざった瞬間に
-		// 「sql: Scan error on column index N」で全件取得が失敗する。
-		// sql.NullString で安全に受け取り、NULLの場合は空文字にフォールバックする。
+		// id / price も、本番スキーマがNOT NULL/INTという前提とズレている可能性を否定できないため、
+		// 念のため全カラムをNull安全な型でScanし、Go側で安全にフォールバックする。
+		var id, price sql.NullInt64
 		var description, category, sellerID sql.NullString
-		if err := rows.Scan(&p.ID, &p.Title, &description, &p.Price, &category, &p.ImageURL1, &sellerID, &p.Status); err != nil {
-			// 🔭 診断用: 次回も同じエラーが起きた場合に原因のカラム・型をすぐ特定できるようにする
+		if err := rows.Scan(&id, &p.Title, &description, &price, &category, &p.ImageURL1, &sellerID, &p.Status); err != nil {
+			// 🔭 診断用: 原因のカラム・型を確実にログへ残す（本番で同じエラーが続く場合はこの出力を確認する）
 			if colTypes, ctErr := rows.ColumnTypes(); ctErr == nil {
 				for i, ct := range colTypes {
-					log.Printf("[GetAllProducts] column %d: name=%s dbType=%s", i, ct.Name(), ct.DatabaseTypeName())
+					log.Printf("[GetAllProducts] column %d: name=%s dbType=%s scanType=%v", i, ct.Name(), ct.DatabaseTypeName(), ct.ScanType())
 				}
 			}
 			return nil, err
 		}
+		if !id.Valid {
+			log.Printf("[GetAllProducts] WARNING: products.id が NULL の行を検出しました（title=%q）。0として扱います。", p.Title)
+		}
+		p.ID = int(id.Int64)
+		p.Price = int(price.Int64)
 		p.Description = description.String
 		p.Category = category.String
 		p.SellerID = sellerID.String
