@@ -70,6 +70,8 @@ func GetProductsHandler(c *gin.Context) {
 	var err error
 	products, err = repository.GetAllProducts()
 	if err != nil {
+		// 💡 本番で500が起きた際に「接続上限なのか／別の理由か」を後から特定できるよう詳細を残す
+		log.Printf("[GetProductsHandler] GetAllProducts failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "商品一覧の取得に失敗しました"})
 		return
 	}
@@ -87,6 +89,7 @@ func GetPurchasedProductsHandler(c *gin.Context) {
 
 	purchased, err := repository.GetPurchasedProducts(buyerID)
 	if err != nil {
+		log.Printf("[GetPurchasedProductsHandler] GetPurchasedProducts failed: buyer_id=%q err=%v", buyerID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "購入履歴の取得に失敗しました"})
 		return
 	}
@@ -128,6 +131,7 @@ func BuyProductHandler(c *gin.Context) {
 			return
 		}
 
+		log.Printf("[BuyProductHandler] BuyProduct failed: product_id=%d buyer_id=%q err=%v", productID, buyerID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "購入処理に失敗しました"})
 		return
 	}

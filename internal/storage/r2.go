@@ -53,7 +53,12 @@ func UploadImage(fileHeader *multipart.FileHeader) (string, error) {
 		contentType = "application/octet-stream"
 	}
 
-	_, err = r2Client.PutObject(context.Background(), &s3.PutObjectInput{
+	// 💡 タイムアウトなしのcontext.Background()だと、R2側の認証・接続不調時にリクエストが
+	// 無限に滞留し、出品処理がハングしてリソースを圧迫し続ける恐れがあるため上限を設ける
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	_, err = r2Client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(config.Env.R2BucketName),
 		Key:         aws.String(key),
 		Body:        file,

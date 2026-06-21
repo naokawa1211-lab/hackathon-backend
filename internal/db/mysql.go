@@ -30,9 +30,13 @@ func ConnectDB() {
 	}
 
 	//コネクションプール
-	DB.SetMaxOpenConns(20)                 // 同時に開ける最大接続数
-	DB.SetMaxIdleConns(5)                  // プール内に保持する空き接続数
+	// 💡 Cloud Run等のサーバーレス環境では「1インスタンスごと」にこの設定が適用される。
+	// インスタンスが複数同時起動すると合計コネクション数が掛け算で増え、Cloud SQLの
+	// max_connections上限を超えて「GETすら500になる」事態を招くため、1インスタンスあたりは小さめに保つ。
+	DB.SetMaxOpenConns(5)                  // 同時に開ける最大接続数（インスタンスごと）
+	DB.SetMaxIdleConns(2)                  // プール内に保持する空き接続数
 	DB.SetConnMaxLifetime(5 * time.Minute) // 接続の寿命
+	DB.SetConnMaxIdleTime(2 * time.Minute) // 使われていない接続を早めに解放する
 
 	// Pingで実際に通信を行う
 	if err := DB.Ping(); err != nil {
