@@ -46,6 +46,7 @@ func SetupRouter() *gin.Engine {
     r.GET("/api/reviews", handler.GetReviewsHandler)
     r.POST("/api/ai/space-description", handler.GenerateSpaceDescriptionHandler)
     r.POST("/api/products/analyze-image", handler.AnalyzeImageHandler)
+    r.POST("/api/ai/agent", handler.AgentHandler)
     r.GET("/api/messages/partners", handler.GetChatPartnersHandler)
 
     r.POST("/api/users", handler.UpsertUserHandler)     // POST: 同期用
