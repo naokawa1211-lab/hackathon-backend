@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"database/sql"
 	"errors" // 💡 エラー生成のために追加
+	"log"
 	"time"
 
 	"hackathon-backend/internal/db"
@@ -56,9 +58,23 @@ func GetAllProducts() ([]model.Product, error) {
 
 	for rows.Next() {
 		var p model.Product
-		if err := rows.Scan(&p.ID, &p.Title, &p.Description, &p.Price, &p.Category, &p.ImageURL1, &p.SellerID, &p.Status); err != nil {
+		// 💡 description / category / seller_id はDBスキーマ上NULLを許容するカラム（NOT NULL制約なし）。
+		// 直接 string へScanすると、本番データにNULLが1件でも混ざった瞬間に
+		// 「sql: Scan error on column index N」で全件取得が失敗する。
+		// sql.NullString で安全に受け取り、NULLの場合は空文字にフォールバックする。
+		var description, category, sellerID sql.NullString
+		if err := rows.Scan(&p.ID, &p.Title, &description, &p.Price, &category, &p.ImageURL1, &sellerID, &p.Status); err != nil {
+			// 🔭 診断用: 次回も同じエラーが起きた場合に原因のカラム・型をすぐ特定できるようにする
+			if colTypes, ctErr := rows.ColumnTypes(); ctErr == nil {
+				for i, ct := range colTypes {
+					log.Printf("[GetAllProducts] column %d: name=%s dbType=%s", i, ct.Name(), ct.DatabaseTypeName())
+				}
+			}
 			return nil, err
 		}
+		p.Description = description.String
+		p.Category = category.String
+		p.SellerID = sellerID.String
 		products = append(products, p)
 	}
 
@@ -86,13 +102,18 @@ func GetPurchasedProducts(buyerID string) ([]model.PurchasedProduct, error) {
 	var purchased []model.PurchasedProduct
 	for rows.Next() {
 		var pp model.PurchasedProduct
+		// 💡 GetAllProductsと同じ理由でNULL許容カラムを安全に受け取る
+		var description, category, sellerID sql.NullString
 		if err := rows.Scan(
 			&pp.TransactionID, &pp.PurchasedAt,
-			&pp.ID, &pp.Title, &pp.Description, &pp.Price, &pp.Category, &pp.ImageURL1, &pp.SellerID, &pp.Status, &pp.CreatedAt,
+			&pp.ID, &pp.Title, &description, &pp.Price, &category, &pp.ImageURL1, &sellerID, &pp.Status, &pp.CreatedAt,
 			&pp.AlreadyReviewed,
 		); err != nil {
 			return nil, err
 		}
+		pp.Description = description.String
+		pp.Category = category.String
+		pp.SellerID = sellerID.String
 		purchased = append(purchased, pp)
 	}
 
@@ -109,15 +130,17 @@ func BuyProduct(productID int, buyerID string) error {
 	}
 	defer tx.Rollback()
 
-	var productTitle, sellerID, currentStatus string
+	var productTitle, currentStatus string
+	var sellerIDNull sql.NullString
 	var price int
 
 	// 🚀 【Claudeの神修正 1】FOR UPDATE で対象行をロックし、同時に価格(price)も取得！
 	query := "SELECT title, seller_id, status, price FROM products WHERE id = ? FOR UPDATE"
-	err = tx.QueryRow(query, productID).Scan(&productTitle, &sellerID, &currentStatus, &price)
+	err = tx.QueryRow(query, productID).Scan(&productTitle, &sellerIDNull, &currentStatus, &price)
 	if err != nil {
 		return err
 	}
+	sellerID := sellerIDNull.String // 💡 seller_id はNULL許容カラムのため安全に受け取る
 
 	// ステータスと不正操作のチェック
 	if currentStatus == "sold" {
