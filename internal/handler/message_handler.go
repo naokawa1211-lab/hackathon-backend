@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"hackathon-backend/internal/model"
 	"hackathon-backend/internal/repository"
@@ -29,6 +30,8 @@ func SendMessageHandler(c *gin.Context) {
 	}
 
 	if err := repository.SaveMessage(&msg); err != nil {
+		// 💡 本番で送信が失敗した際に、Cloud Runのログから原因（接続不可・テーブル不在・権限不足など）を特定できるようにする
+		log.Printf("[SendMessageHandler] SaveMessage failed: sender_id=%q receiver_id=%q err=%v", req.SenderID, req.ReceiverID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "メッセージの保存に失敗しました"})
 		return
 	}
@@ -51,9 +54,11 @@ func GetChatHistoryHandler(c *gin.Context) {
     // repository 側から履歴を取得（※関数名は repository 側の実装に合わせて調整してください）
     messages, err := repository.GetChatHistory(senderID, receiverID)
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "履歴の取得に失敗しました"})
-        return
-    }
+    log.Printf("[GetChatHistoryHandler] GetChatHistory failed: ... err=%v", ..., err)
+    // 💡 隠さずに、Goが怒っている生のエラー文をそのままフロントに返す！
+    c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()}) 
+    return
+}
 
     // 履歴をそのまま JSON で返す
     c.JSON(http.StatusOK, messages)
@@ -73,6 +78,7 @@ func GetChatPartnersHandler(c *gin.Context) {
 
 	partners, err := repository.GetChatPartners(userID)
 	if err != nil {
+		log.Printf("[GetChatPartnersHandler] GetChatPartners failed: user_id=%q err=%v", userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "チャット相手の取得に失敗しました"})
 		return
 	}
