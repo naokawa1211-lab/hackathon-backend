@@ -54,7 +54,7 @@ func GetChatHistoryHandler(c *gin.Context) {
     // repository 側から履歴を取得（※関数名は repository 側の実装に合わせて調整してください）
     messages, err := repository.GetChatHistory(senderID, receiverID)
     if err != nil {
-    log.Printf("[GetChatHistoryHandler] GetChatHistory failed: ... err=%v", ..., err)
+    log.Printf("[GetChatHistoryHandler] GetChatHistory failed: sender_id=%q receiver_id=%q err=%v", senderID, receiverID, err)
     // 💡 隠さずに、Goが怒っている生のエラー文をそのままフロントに返す！
     c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()}) 
     return
